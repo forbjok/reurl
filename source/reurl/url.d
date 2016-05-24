@@ -37,7 +37,7 @@ struct URL {
     URL opOpAssign(string op : "~")(in string url) {
         if (url.startsWith("/")) {
             // The URL appended starts with // - replace host, path, query and fragment
-            auto splitDoubleDashPart = regex(`(//([\w\.]*)(?::(\d*))?)?(/[\w\-\.\/]*)?(\?[\w&=]*)?(#\w*)?`);
+            auto splitDoubleDashPart = regex(`(//([\w\.\-]*)(?::(\d*))?)?(/[\w\-_\.\/]*)?(\?[\w\-_&=]*)?(#[\w\-_=]*)?`);
 
             auto m = url.matchFirst(splitDoubleDashPart);
 
@@ -59,7 +59,7 @@ struct URL {
             }
             else {
                 // The URL appended is a relative path - append it to the current one and replace query and fragment
-                auto splitPart = regex(`([\w\-\.\/]*)?(\?[\w&=]*)?(#\w*)?`);
+                auto splitPart = regex(`([\w\-_\.\/]*)?(\?[\w\-_&=]*)?(#[\w\-_=]*)?`);
                 auto m = url.matchFirst(splitPart);
                 with (this) {
                     path ~= (path.endsWith("/") ? "" : "/") ~ m[1];
@@ -83,7 +83,7 @@ struct URL {
 URL parseURL(in string url) {
     URL purl;
 
-    auto splitUrl = regex(`(\w*)://(?:(\w*)(?::(\w*))?@)?([\w\.]*)(?::(\d*))?(/[\w\-\.\/]*)?(\?[\w&=]*)?(#\w*)?`);
+    auto splitUrl = regex(`(\w*)://(?:([\w\-_]*)(?::([\w\-_]*))?@)?([\w\-\.]*)(?::(\d*))?(/[\w\-_\.\/]*)?(\?[\w\-_&=]*)?(#[\w\-_=]*)?`);
 
     auto m = url.matchFirst(splitUrl);
     if (m.empty) {
@@ -105,71 +105,71 @@ URL parseURL(in string url) {
 }
 
 unittest {
-    auto url = "http://username:password@www.hostname.com:1234/path1/path2?param1=value1&param2=value2#fragment";
+    auto url = "http://username:password@www.host-name.com:1234/path1/path2?param1=value1&param2=value2#fragment";
     auto purl = parseURL(url);
 
     assert(purl.scheme == "http");
     assert(purl.username == "username");
     assert(purl.password == "password");
-    assert(purl.hostname == "www.hostname.com");
+    assert(purl.hostname == "www.host-name.com");
     assert(purl.port == "1234");
     assert(purl.path == "/path1/path2");
     assert(purl.query == "?param1=value1&param2=value2");
     assert(purl.fragment == "#fragment");
-    assert(purl.host == "www.hostname.com:1234");
+    assert(purl.host == "www.host-name.com:1234");
     assert(purl.toString() == url);
 }
 
 unittest {
-    auto url = "http://www.hostname.com/path?param=value";
+    auto url = "http://www.host-name.com/path?param=value";
     auto purl = parseURL(url);
 
     assert(purl.scheme == "http");
     assert(purl.username == "");
     assert(purl.password == "");
-    assert(purl.hostname == "www.hostname.com");
+    assert(purl.hostname == "www.host-name.com");
     assert(purl.port == "");
     assert(purl.path == "/path");
     assert(purl.query == "?param=value");
     assert(purl.fragment == "");
-    assert(purl.host == "www.hostname.com");
+    assert(purl.host == "www.host-name.com");
     assert(purl.toString() == url);
 }
 
 unittest {
-    auto url = "http://www.hostname.com/path";
+    auto url = "http://www.host-name.com/path";
     auto purl = parseURL(url);
 
     assert(purl.scheme == "http");
     assert(purl.username == "");
     assert(purl.password == "");
-    assert(purl.hostname == "www.hostname.com");
+    assert(purl.hostname == "www.host-name.com");
     assert(purl.port == "");
     assert(purl.path == "/path");
     assert(purl.query == "");
     assert(purl.fragment == "");
-    assert(purl.host == "www.hostname.com");
+    assert(purl.host == "www.host-name.com");
     assert(purl.toString() == url);
 }
 
 unittest {
-    auto url = "http://www.hostname.com";
+    auto url = "http://www.host-name.com";
     auto purl = parseURL(url);
 
     assert(purl.scheme == "http");
     assert(purl.username == "");
     assert(purl.password == "");
-    assert(purl.hostname == "www.hostname.com");
+    assert(purl.hostname == "www.host-name.com");
     assert(purl.port == "");
     assert(purl.path == "");
     assert(purl.query == "");
     assert(purl.fragment == "");
-    assert(purl.host == "www.hostname.com");
+    assert(purl.host == "www.host-name.com");
     assert(purl.toString() == url);
 }
 
 unittest {
-    auto url = "http://username:password@www.hostname.com:1234/path1/path2?param1=value1&param2=value2#fragment";
+    auto url = "http://username:password@www.host-name.com:1234/path1/path2?param1=value1&param2=value2#fragment";
     auto purl = parseURL(url);
     purl ~= "//newhost.org/newpath";
 
@@ -186,7 +186,7 @@ unittest {
 }
 
 unittest {
-    auto url = "http://username:password@www.hostname.com:1234/path1/path2?param1=value1&param2=value2#fragment";
+    auto url = "http://username:password@www.host-name.com:1234/path1/path2?param1=value1&param2=value2#fragment";
     auto newUrl = "newscheme://newusername:newpassword@www.newhostname.com:2345/newpath?newparam=newvalue#newfragment";
     auto purl = parseURL(url);
     purl ~= newUrl;
